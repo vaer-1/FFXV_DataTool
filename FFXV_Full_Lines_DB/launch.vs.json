@@ -1,0 +1,18 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Electron App",
+      "program": "main.js",
+      "runtimeExecutable": "node_modules\\.bin\\electron.cmd",
+      "args": [ "." ],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  ]
+}

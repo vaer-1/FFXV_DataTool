@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>FFXV Full Lines Extractor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Final Fantasy XV Full Lines Extractor</h1>
+            <div class="info-panel">
+                <div class="info-item">
+                    <strong>Database Location:</strong> <span id="db-path">Not selected</span>
+                </div>
+                <div class="info-item">
+                    <strong>Status:</strong> <span id="status">Ready</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="section">
+                    <h2>Database Setup</h2>
+                    <div class="setup-controls">
+                        <button id="select-location-btn" class="secondary-button">Select Database File or Destination</button>
+                        <div class="setup-info" id="setup-info" style="display: none;">
+                            <span class="success-text">Database location selected</span>
+                        </div>
+                        <!-- NEW: Progress info display -->
+                        <div id="progress-info" style="display: none; margin-top: 8px; padding: 8px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 3px; font-size: 12px; color: #1565c0;"></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Data Extraction</h2>
+                    <div class="extraction-controls">
+                        <div class="button-group">
+                            <button id="extract-btn" class="primary-button" disabled>Start Fresh Extraction</button>
+                            <!-- NEW: Resume button -->
+                            <button id="resume-btn" class="secondary-button" disabled>Resume Extraction</button>
+                            <button id="cancel-btn" class="cancel-button" disabled>Cancel</button>
+                        </div>
+                        <div class="progress-container" id="progress-container" style="display: none;">
+                            <div class="progress-info">
+                                <span id="progress-text">0 / 0</span>
+                                <span id="progress-percent">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <div class="current-file" id="current-file"></div>
+                        </div>
+
+                        <!-- NEW: Maintenance controls -->
+                        <div class="button-group" style="margin-top: 12px;">
+                            <button id="cleanup-btn" class="secondary-button" disabled>Clean Up Incomplete Data</button>
+                            <button id="validate-btn" class="secondary-button" disabled>Validate Database</button>
+                        </div>
+                    </div>
+
+                    <div class="stats-panel" id="stats-panel" style="display: none;">
+                        <h3>Database Statistics</h3>
+                        <div id="stats-content"></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Activity Log</h2>
+                    <div class="log-container" id="log-container">
+                        <div class="log-entry">Ready to start extraction...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="section">
+                    <h2>Search Full Lines</h2>
+                    <div class="search-controls">
+                        <input type="text" id="search-input" placeholder="Enter search terms..." disabled />
+                        <div class="filter-row">
+                            <select id="language-filter" disabled>
+                                <option value="">All Languages</option>
+                                <option value="us">English</option>
+                                <option value="jp">Japanese</option>
+                                <option value="de">German</option>
+                                <option value="fr">French</option>
+                            </select>
+                            <select id="section-filter" disabled>
+                                <option value="">All Sections</option>
+                            </select>
+                            <select id="speaker-filter" disabled>
+                                <option value="">All Speakers</option>
+                            </select>
+                        </div>
+                        <button id="search-btn" class="secondary-button" disabled>Search</button>
+                    </div>
+
+                    <div class="results-container">
+                        <div class="results-header">
+                            <span id="results-count">Search Results</span>
+                        </div>
+                        <div class="results-list" id="results-list">
+                            <div class="no-results">Complete extraction to search full lines</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

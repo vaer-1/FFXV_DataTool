@@ -1,0 +1,41 @@
+{
+  "name": "ffxv-full-lines-extractor",
+  "version": "1.0.0",
+  "description": "Final Fantasy XV Full Lines Data Extractor",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "dev": "electron . --serve"
+  },
+  "build": {
+    "appId": "com.ffxv.fulllines.extractor",
+    "productName": "FFXV Full Lines Extractor",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "*.js",
+      "*.html",
+      "*.css",
+      "sections.json",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "axios": "^1.5.0",
+    "better-sqlite3": "^9.6.0"
+  }
+}

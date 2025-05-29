@@ -1,0 +1,1068 @@
+{
+  "sections": [
+    {
+      "name": "dir/11000mission_titan",
+      "languages": [
+        "jp"
+      ]
+    },
+    {
+      "name": "dir/11001scenario-epd",
+      "languages": [
+        "jp"
+      ]
+    },
+    {
+      "name": "dir/11002scenario-titan",
+      "languages": [
+        "jp"
+      ]
+    },
+    {
+      "name": "dir/11003scenario-epd2",
+      "languages": [
+        "jp"
+      ]
+    },
+    {
+      "name": "dir/11004scenario-jfpv",
+      "languages": [
+        "jp"
+      ]
+    },
+    {
+      "name": "dir/11005story_ep00",
+      "languages": [
+        "jp"
+      ]
+    },
+    {
+      "name": "dir/11006scenario-epdend",
+      "languages": [
+        "jp"
+      ]
+    },
+    {
+      "name": "dir/12001town_hammer",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/12002town_lestallum",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/12003town_galdin",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/12004town_wm_le",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/12005town_radio",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/12006town_chocobo",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/12007town_other",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/12008town_altissia",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/12009town_train",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/12010town_common",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/13002quest-epd2",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14000ai_gladio",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14001ai_ignis",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14002ai_noct",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14003ai_prompto",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14004ai_party_car",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14005ai_party_enemy",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14006ai_party_guide",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14007ai_party_place",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14008ai_party_state",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14009ai_party_time",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14010ai_party_free",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14011ai_party_story",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14012ai_party_strategy",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14013ai_aranea",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14014ai_cor",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14015aipc_01",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14016ai_party_parts",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14017aipc_02",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14018aipc_03",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14019aipc_04",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14020aipc_05",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14021aipc_f2f",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14022aipc_06",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14023aipc_08",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14024aipc_07",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14025aipc_09",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/14026aipc_goty",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15000battle_gladio",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15001battle_ignis",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15002battle_noct",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15003battle_prompto",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15004battle_party",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15005battle_aranea",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15006battle_cor",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15007battle_party_parts",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15008battle_ravus",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15009battle_loqi",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15010battle_ardyn",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15011battle_caligo",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15012battle_ifrit",
+      "languages": [
+        "jp"
+      ]
+    },
+    {
+      "name": "dir/15013battle_gilgamesh",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15014battle_avatar_female",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15015battle_avatar_male",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15016battle_luna",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15017battle_bahamut",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15018battle_libertus",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15019battle_goty",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15020battle_epa",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15021battle_garuda",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15022battle_jimei",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/15023battle_multiplayer2",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/16000story_v_cp01",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/16001story_v_cp90",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/16002story_v_cp03",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/16003story_v_cp09",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/16004story_v_cp02",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/16005story_v_cp04",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/16006story_v_cp05",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/16007story_v_cp06",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/16008story_v_cp08",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/16009story_v_cp00",
+      "languages": [
+        "jp",
+        "de"
+      ]
+    },
+    {
+      "name": "dir/17000level_v_cp01",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17002level_v_cp03",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17003level_v_cp04",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17004level_v_cp05",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17005level_v_cp06",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17006level_v_cp02b",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17007level_v_cp02c",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17008level_v_s_dungeon",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17009level_v_s_wm",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17010level_v_cp02a",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17011level_v_cp07",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17012level_v_cp08",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17013level_v_cp09",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17014level_v_platinumdemo",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17015level_v_qt_tour",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17016level_v_s_subquest",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17017level_v_minigame",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17018level_v_common",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17019level_v_nifl_base",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17020level_v_niflbasement",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17021level_v_cp00",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17022level_v_endcredit",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17024level_v_nox00",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17025level_v_nox02",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17026level_v_noxhd",
+      "languages": [
+        "jp",
+        "de"
+      ]
+    },
+    {
+      "name": "dir/17027level_v_ffxv_eve",
+      "languages": [
+        "jp"
+      ]
+    },
+    {
+      "name": "dir/17028level_v_cp06b",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17029level_v_multiplayer",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17030level_v_nox03",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17032level_v_feather01",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17033level_v_nox01",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17034level_v_cchange",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17035level_v_goty",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17036level_v_ff30th_anniver",
+      "languages": [
+        "jp"
+      ]
+    },
+    {
+      "name": "dir/17037level_v_epa",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17038level_v_14_collabo",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17039level_v_tb2",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "dir/17041level_v_multiplayer2",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "noaudio",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "nowloading",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "wiki/enemy",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "wiki/note",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    },
+    {
+      "name": "wiki/people",
+      "languages": [
+        "us",
+        "jp",
+        "de",
+        "fr"
+      ]
+    }
+  ]
+}
