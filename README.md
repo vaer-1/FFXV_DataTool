@@ -10,8 +10,11 @@ Download the installer <a href=''>Here</a>
 
 ~~ Planned Features ~~
 - Import digital PDFs
+- Addition of Episode Ardyn Prologue data
+- Addition of Brotherhood anime data
+- Addition of Kingsglaive data
 - Expanded statistics
 - Free query of databases
 
 Please submit bug reports to vae.7194@gmail.com.
-All data is copyright Square Enix.
+All data is copyright Square Enix. This tool is for research purposes only.
