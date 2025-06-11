@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
-    "dev": "electron . --serve"
+    "dev": "electron . --serve",
+    "debug": "electron ."
   },
   "build": {
     "appId": "com.ffxv.fulllines.extractor",
@@ -36,6 +37,7 @@
   },
   "dependencies": {
     "axios": "^1.5.0",
-    "better-sqlite3": "^9.6.0"
+    "better-sqlite3": "^9.6.0",
+    "ffxv-full-lines-extractor": "file:"
   }
 }

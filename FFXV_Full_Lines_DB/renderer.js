@@ -30,10 +30,6 @@ class FFXVExtractorUI {
         this.currentFile = document.getElementById('current-file');
         this.progressInfo = document.getElementById('progress-info');
 
-        // Maintenance controls
-        this.cleanupBtn = document.getElementById('cleanup-btn');
-        this.validateBtn = document.getElementById('validate-btn');
-
         // Stats and logs
         this.statsPanel = document.getElementById('stats-panel');
         this.statsContent = document.getElementById('stats-content');
@@ -55,8 +51,6 @@ class FFXVExtractorUI {
         this.extractBtn.addEventListener('click', () => this.startExtraction());
         this.resumeBtn?.addEventListener('click', () => this.resumeExtraction());
         this.cancelBtn.addEventListener('click', () => this.cancelExtraction());
-        this.cleanupBtn?.addEventListener('click', () => this.cleanupIncompleteData());
-        this.validateBtn?.addEventListener('click', () => this.validateDatabase());
         this.searchBtn.addEventListener('click', () => this.performSearch());
 
         this.searchInput.addEventListener('keypress', (e) => {
@@ -66,6 +60,11 @@ class FFXVExtractorUI {
         this.searchInput.addEventListener('input', () => {
             if (this.searchInput.value.length >= 3) {
                 this.performSearch();
+            } else if (this.searchInput.value.length === 0) {
+                // If search is cleared but speaker is selected, show speaker results
+                if (this.speakerFilter.value) {
+                    this.performSearch();
+                }
             }
         });
 
@@ -75,43 +74,14 @@ class FFXVExtractorUI {
         });
 
         this.sectionFilter.addEventListener('change', () => this.performSearch());
+        
+        // KEY CHANGE: Speaker filter automatically searches when changed
         this.speakerFilter.addEventListener('change', () => this.performSearch());
 
         // Listen for extraction progress
         window.electronAPI.onExtractionProgress((progress) => {
             this.handleExtractionProgress(progress);
         });
-    }
-
-    async checkExtractionProgress() {
-        if (!this.databaseSelected) return;
-
-        const result = await window.electronAPI.getExtractionProgress();
-        if (result.success) {
-            const progress = result.progress;
-            this.resumeAvailable = progress.remaining > 0;
-
-            // Enable search if there's ANY extracted data
-            this.extractionComplete = progress.hasAnyData && progress.completed > 0;
-
-            if (progress.completed > 0) {
-                const infoText = `Progress: ${progress.completed}/${progress.total} sections complete`;
-                if (this.progressInfo) {
-                    this.progressInfo.textContent = infoText;
-                    this.progressInfo.style.display = 'block';
-                }
-                this.addLog(infoText, 'info');
-
-                if (this.extractionComplete) {
-                    this.addLog('Database has extracted data - enabling search functionality', 'success');
-                    await this.loadStats();
-                    await this.populateSectionFilter();
-                    await this.populateSpeakerFilter();
-                }
-            }
-
-            this.updateUI();
-        }
     }
 
     async selectDatabaseLocation() {
@@ -150,13 +120,41 @@ class FFXVExtractorUI {
         }
     }
 
+    async checkExtractionProgress() {
+        if (!this.databaseSelected) return;
+
+        const result = await window.electronAPI.getExtractionProgress();
+        if (result.success) {
+            const progress = result.progress;
+            this.resumeAvailable = progress.remaining > 0;
+            this.extractionComplete = progress.hasAnyData && progress.completed > 0;
+
+            if (progress.completed > 0) {
+                const infoText = `Progress: ${progress.completed}/${progress.total} sections complete`;
+                if (this.progressInfo) {
+                    this.progressInfo.textContent = infoText;
+                    this.progressInfo.style.display = 'block';
+                }
+                this.addLog(infoText, 'info');
+
+                if (this.extractionComplete) {
+                    this.addLog('Database has extracted data - enabling search functionality', 'success');
+                    await this.loadStats();
+                    await this.populateSectionFilter();
+                    await this.populateSpeakerFilter();
+                }
+            }
+
+            this.updateUI();
+        }
+    }
+
     async startExtraction() {
         if (!this.databaseSelected) {
             this.addLog('Please select database location first', 'error');
             return;
         }
-
-        await this.performExtraction(false); // Fresh extraction
+        await this.performExtraction(false);
     }
 
     async resumeExtraction() {
@@ -164,15 +162,15 @@ class FFXVExtractorUI {
             this.addLog('Resume not available', 'error');
             return;
         }
-
-        await this.performExtraction(true); // Resume extraction
+        await this.performExtraction(true);
     }
 
     async performExtraction(resumeMode = false) {
+        const actionText = resumeMode ? 'Resuming extraction' : 'Starting extraction';
+        
         this.isExtracting = true;
         this.updateUI();
 
-        const actionText = resumeMode ? 'Resuming extraction' : 'Starting extraction';
         this.setStatus('Testing connection...', 'testing');
 
         // Test connection first
@@ -210,8 +208,6 @@ class FFXVExtractorUI {
         } else {
             this.addLog('Extraction failed: ' + result.error, 'error');
             this.setStatus('Extraction failed', 'error');
-
-            // Check if we can resume after failure
             await this.checkExtractionProgress();
         }
 
@@ -225,59 +221,8 @@ class FFXVExtractorUI {
         }
     }
 
-    async cleanupIncompleteData() {
-        if (!this.databaseSelected) {
-            this.addLog('Please select database first', 'error');
-            return;
-        }
-
-        this.addLog('Cleaning up incomplete sections...', 'info');
-        const result = await window.electronAPI.cleanupIncompleteSections();
-
-        if (result.success) {
-            if (result.cleanedCount > 0) {
-                this.addLog(`Cleaned up ${result.cleanedCount} incomplete sections`, 'success');
-            } else {
-                this.addLog('No incomplete sections found to clean up', 'info');
-            }
-            await this.checkExtractionProgress();
-        } else {
-            this.addLog('Cleanup failed: ' + result.error, 'error');
-        }
-    }
-
-    async validateDatabase() {
-        if (!this.databaseSelected) {
-            this.addLog('Please select database first', 'error');
-            return;
-        }
-
-        this.addLog('Validating database integrity...', 'info');
-        const result = await window.electronAPI.validateDatabase();
-
-        if (result.success) {
-            const validation = result.validation;
-            if (validation.isValid) {
-                this.addLog('Database validation passed - no issues found', 'success');
-            } else {
-                validation.issues.forEach(issue => {
-                    if (issue.type === 'incomplete_sections') {
-                        this.addLog(`Found ${issue.count} incomplete sections`, 'warning');
-                        issue.sections.forEach(sec => {
-                            this.addLog(`  - ${sec.section}: missing ${sec.missingLanguages.join(', ')}`, 'warning');
-                        });
-                    } else if (issue.type === 'duplicates') {
-                        this.addLog(`Found ${issue.count} duplicate entries`, 'warning');
-                    }
-                });
-            }
-        } else {
-            this.addLog('Database validation failed: ' + result.error, 'error');
-        }
-    }
-
     async populateSpeakerFilter() {
-        // Clear existing options except the first one (All Speakers)
+        // Clear existing options except the first one
         while (this.speakerFilter.children.length > 1) {
             this.speakerFilter.removeChild(this.speakerFilter.lastChild);
         }
@@ -289,11 +234,8 @@ class FFXVExtractorUI {
             const result = await window.electronAPI.getCharacters(currentLanguage);
 
             if (result.success && result.characters) {
-                // Debug log
-                console.log(`Loaded ${result.characters.length} characters for language: ${currentLanguage || 'all'}`);
-
                 result.characters.forEach(character => {
-                    if (character && character.trim()) { // Skip empty names
+                    if (character && character.trim()) {
                         const option = document.createElement('option');
                         option.value = character;
                         option.textContent = character;
@@ -306,7 +248,6 @@ class FFXVExtractorUI {
                 this.addLog('Failed to load speakers: ' + (result.error || 'No characters found'), 'warning');
             }
         } catch (error) {
-            console.error('Failed to populate speaker filter:', error);
             this.addLog('Error loading speakers: ' + error.message, 'error');
         }
     }
@@ -322,34 +263,45 @@ class FFXVExtractorUI {
         const section = this.sectionFilter.value || null;
         const speaker = this.speakerFilter.value || null;
 
-        // If no query but speaker is selected, search by speaker
-        if (!query && speaker) {
-            // Remove limit - search returns all results
-            const result = await window.electronAPI.searchByCharacter(speaker, language, section, null);
-            if (result.success) {
-                this.displayResults(result.results, speaker, 'speaker');
-            } else {
-                this.addLog('Speaker search failed: ' + result.error, 'error');
+        // If speaker is selected, show all their lines (regardless of search text)
+        if (speaker) {
+            try {
+                const result = await window.electronAPI.searchByCharacter(speaker, language, section, null);
+                if (result.success) {
+                    // If there's also search text, filter the speaker results by that text
+                    let results = result.results;
+                    if (query) {
+                        results = results.filter(r => 
+                            r.text.toLowerCase().includes(query.toLowerCase())
+                        );
+                    }
+                    this.displayResults(results, speaker, 'speaker');
+                } else {
+                    this.addLog('Speaker search failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                this.addLog('Speaker search error: ' + error.message, 'error');
             }
             return;
         }
 
-        if (!query) {
-            this.clearResults();
+        // If no speaker selected but there's search text, do text search
+        if (query) {
+            try {
+                const result = await window.electronAPI.searchFullLines(query, language, section, null);
+                if (result.success) {
+                    this.displayResults(result.results, query, 'text');
+                } else {
+                    this.addLog('Text search failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                this.addLog('Text search error: ' + error.message, 'error');
+            }
             return;
         }
 
-        const result = await window.electronAPI.searchByCharacter(speaker, language, section, null);
-        if (result.success) {
-            // Filter by speaker if selected
-            let results = result.results;
-            if (speaker) {
-                results = results.filter(r => r.speakerName === speaker);
-            }
-            this.displayResults(results, query, 'text');
-        } else {
-            this.addLog('Search failed: ' + result.error, 'error');
-        }
+        // No speaker and no search text - clear results
+        this.clearResults();
     }
 
     displayResults(results, query, searchType = 'text') {
@@ -360,36 +312,24 @@ class FFXVExtractorUI {
             return;
         }
 
-        // Debug logging for character mapping issues
-        const speakerStats = {};
-        results.forEach(result => {
-            const speaker = result.speakerName || '???';
-            speakerStats[speaker] = (speakerStats[speaker] || 0) + 1;
-        });
-        console.log('Speaker distribution in results:', speakerStats);
-
         const resultsHTML = results.map(result => {
             const highlightedText = searchType === 'text' ?
                 this.highlightText(result.text, query) : result.text;
 
-            // Clean section name and create clickable link  
             const cleanSection = result.section.replace(/^dir\//, '');
             const sectionLink = `<a href="${result.sectionUrl}" target="_blank" class="section-link">${cleanSection}</a>`;
 
             return `
-            <div class="result-item">
-                <div class="result-meta">
-                    <span>${sectionLink} • ${result.langName}</span>
-                    <span class="speaker-name">${result.speakerName}</span>
+                <div class="result-item">
+                    <div class="result-meta">
+                        <span>${sectionLink} - ${result.speakerName} - ${result.langName}</span>
+                    </div>
+                    <div class="result-text">${highlightedText}</div>
                 </div>
-                <div class="result-text">${highlightedText}</div>
-            </div>
-        `;
+            `;
         }).join('');
 
         this.resultsList.innerHTML = resultsHTML;
-
-        // Log search statistics
         this.addLog(`Search returned ${results.length.toLocaleString()} results`, 'info');
     }
 
@@ -444,7 +384,7 @@ class FFXVExtractorUI {
                 });
             }
         } catch (error) {
-            console.error('Failed to populate section filter:', error);
+            // Fallback sections if stats fail
             const commonSections = [
                 'nowloading', 'story_v_cp01', 'story_v_cp02', 'ai_noct', 'ai_prompto',
                 'ai_gladio', 'ai_ignis', 'battle_noct', 'battle_party', 'town_common'
@@ -459,27 +399,13 @@ class FFXVExtractorUI {
     }
 
     handleExtractionProgress(progress) {
-        if (progress.status === 'cancelled') {
-            return;
-        }
+        if (progress.status === 'cancelled') return;
 
-        // Handle new progress types
-        if (progress.status === 'cleanup') {
+        if (['cleanup', 'resume', 'info'].includes(progress.status)) {
             this.addLog(progress.message, 'info');
             return;
         }
 
-        if (progress.status === 'resume') {
-            this.addLog(progress.message, 'info');
-            return;
-        }
-
-        if (progress.status === 'info') {
-            this.addLog(progress.message, 'info');
-            return;
-        }
-
-        // Existing progress handling
         if (progress.total && progress.current !== undefined) {
             const percent = Math.round((progress.current / progress.total) * 100);
             this.progressText.textContent = `${progress.current} / ${progress.total}`;
@@ -495,8 +421,6 @@ class FFXVExtractorUI {
             this.addLog(`Downloaded ${progress.currentFile} (${progress.entryCount} entries)`, 'success');
         } else if (progress.status === 'error') {
             this.addLog(`Failed ${progress.currentFile}: ${progress.error}`, 'error');
-        } else if (progress.status === 'downloading') {
-            // Just update UI, don't log every download attempt
         }
     }
 
@@ -521,7 +445,7 @@ class FFXVExtractorUI {
     }
 
     updateUI() {
-        // Enable/disable extraction controls based on state
+        // Enable/disable extraction controls
         this.extractBtn.disabled = !this.databaseSelected || this.isExtracting || this.sectionsError;
         this.cancelBtn.disabled = !this.isExtracting;
 
@@ -529,15 +453,7 @@ class FFXVExtractorUI {
             this.resumeBtn.disabled = !this.databaseSelected || this.isExtracting || !this.resumeAvailable || this.sectionsError;
         }
 
-        if (this.cleanupBtn) {
-            this.cleanupBtn.disabled = !this.databaseSelected || this.isExtracting;
-        }
-
-        if (this.validateBtn) {
-            this.validateBtn.disabled = !this.databaseSelected || this.isExtracting;
-        }
-
-        // Search controls - all three dropdowns
+        // Search controls
         const searchEnabled = this.extractionComplete && !this.isExtracting;
         this.searchInput.disabled = !searchEnabled;
         this.languageFilter.disabled = !searchEnabled;

@@ -6,12 +6,15 @@ const Database = require('better-sqlite3');
 const axios = require('axios');
 
 class FFXVExtractor {
-    constructor() {
+    constructor() 
+    {
+        this.baseUrl = 'https://ff15.aikotoba.jp';
         this.dbPath = null;
         this.db = null;
         this.extractionCancelled = false;
         this.characterMappings = null;
-        this.languages = {
+        this.languages = 
+        {
             'us': 'English',
             'jp': 'Japanese',
             'de': 'German',
@@ -21,28 +24,35 @@ class FFXVExtractor {
         this.loadSections();
         this.loadCharacterMappings();
         this.initializeLogFile();
-    }
-
-    buildUrl(section, langCode = null) {
+        }
+        
+    buildUrl(section, langCode = null, isListFile = false) {
         const baseUrl = 'https://ff15.aikotoba.jp';
+        
+        // Base URL is the web view with hash fragment
+        if (!langCode && !isListFile) {
+            return `${baseUrl}/#/${section}`;
+        }
+        
+        // Determine suffix for API endpoints
+        let suffix = '';
+        if (isListFile) {
+            suffix = '_list';
+        } else if (langCode) {
+            suffix = `_${langCode}`;
+        }
 
         if (section.startsWith('dir/')) {
             // Story sections: dir/16009story_v_cp00 -> /data/16009story_v_cp00_list.json
             const storyId = section.replace('dir/', '');
-            if (langCode) {
-                return `${baseUrl}/data/${storyId}_${langCode}.json`;
-            } else {
-                return `${baseUrl}/data/${storyId}_list.json`;
-            }
+            return `${baseUrl}/data/${storyId}${suffix}.json`;
         } else if (section.startsWith('wiki/')) {
-            // Wiki sections: wiki/enemy -> /wiki/wiki_enemy.json
+            // Wiki sections: wiki/enemy -> /wiki/wiki_enemy_list.json
             const wikiType = section.replace('wiki/', '');
-            const langSuffix = langCode ? `_${langCode}` : '';
-            return `${baseUrl}/wiki/wiki_${wikiType}${langSuffix}.json`;
+            return `${baseUrl}/wiki/wiki_${wikiType}${suffix}.json`;
         } else {
-            // Simple sections: nowloading -> /nowloading/nowloading.json
-            const langSuffix = langCode ? `_${langCode}` : '';
-            return `${baseUrl}/${section}/${section}${langSuffix}.json`;
+            // Simple sections: nowloading -> /nowloading/nowloading_list.json
+            return `${baseUrl}/${section}/${section}${suffix}.json`;
         }
     }
 
@@ -52,11 +62,11 @@ class FFXVExtractor {
         const insertStmt = this.db.prepare(`
         INSERT OR REPLACE INTO section_urls 
         VALUES (?, ?)
-    `);
+        `);
 
         const transaction = this.db.transaction(() => {
             for (const sectionConfig of this.sections) {
-                const viewUrl = `https://ff15.aikotoba.jp/#/${sectionConfig.name}`;
+                const viewUrl = this.baseUrl + `/#/${sectionConfig.name}`;
                 insertStmt.run(sectionConfig.name, viewUrl);
             }
         });
@@ -124,19 +134,26 @@ class FFXVExtractor {
         }
 
         this.db = new Database(this.dbPath);
-
         this.db.exec(`
         CREATE TABLE IF NOT EXISTS fulllines (
-            id TEXT,
-            section TEXT,
-            language TEXT,
-            lang_name TEXT,
-            text TEXT,
-            PRIMARY KEY (id, section, language)
+            dialogue_id TEXT NOT NULL,
+            conversation_id TEXT NOT NULL,
+            section TEXT NOT NULL,
+            language TEXT NOT NULL,
+            lang_name TEXT NOT NULL,
+            text TEXT NOT NULL,
+            character_id TEXT,
+            PRIMARY KEY (dialogue_id, language),
+            FOREIGN KEY (conversation_id) REFERENCES SourceSubLabels(id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS SourceSubLabels (
+            id TEXT PRIMARY KEY,
+            section TEXT NOT NULL
         );
         
         CREATE TABLE IF NOT EXISTS character_mappings (
-            dialogue_id TEXT PRIMARY KEY,
+            character_id TEXT PRIMARY KEY,
             us_name TEXT,
             jp_name TEXT, 
             de_name TEXT,
@@ -152,7 +169,10 @@ class FFXVExtractor {
         CREATE INDEX IF NOT EXISTS idx_fulllines_text ON fulllines(text);
         CREATE INDEX IF NOT EXISTS idx_fulllines_section ON fulllines(section);
         CREATE INDEX IF NOT EXISTS idx_fulllines_language ON fulllines(language);
-        CREATE INDEX IF NOT EXISTS idx_fulllines_id_section ON fulllines(id, section);
+        CREATE INDEX IF NOT EXISTS idx_fulllines_character_id ON fulllines(character_id);
+        CREATE INDEX IF NOT EXISTS idx_fulllines_conversation_id ON fulllines(conversation_id);
+        CREATE INDEX IF NOT EXISTS idx_fulllines_dialogue_lang ON fulllines(dialogue_id, language);
+        CREATE INDEX IF NOT EXISTS idx_sourcelabels_section ON SourceSubLabels(section);
         
         -- Character mapping indexes
         CREATE INDEX IF NOT EXISTS idx_char_us ON character_mappings(us_name) WHERE us_name IS NOT NULL;
@@ -218,40 +238,6 @@ class FFXVExtractor {
     }
 
     /**
-     * Clean up incomplete data for a specific section
-     */
-    cleanupIncompleteSection(section) {
-        if (!this.db) return false;
-
-        console.log(`Checking section for cleanup: ${section}`);
-
-        const sectionConfig = this.sections.find(s => s.name === section);
-        if (!sectionConfig) {
-            console.log(`Section config not found for: ${section}`);
-            return false;
-        }
-
-        const expectedLanguages = sectionConfig.languages;
-        console.log(`Expected languages for ${section}:`, expectedLanguages);
-
-        const stmt = this.db.prepare('SELECT DISTINCT language FROM fulllines WHERE section = ?');
-        const existingLanguages = stmt.all(section).map(row => row.language);
-        console.log(`Existing languages for ${section}:`, existingLanguages);
-
-        // If section is incomplete (doesn't have all expected languages), remove it
-        if (existingLanguages.length > 0 && existingLanguages.length < expectedLanguages.length) {
-            console.log(`Cleaning up incomplete section: ${section} (has ${existingLanguages.length}/${expectedLanguages.length} languages)`);
-            const deleteStmt = this.db.prepare('DELETE FROM fulllines WHERE section = ?');
-            const result = deleteStmt.run(section);
-            console.log(`Deleted ${result.changes} rows for section: ${section}`);
-            return true; // Indicates cleanup occurred
-        }
-
-        console.log(`Section ${section} is complete or empty, skipping cleanup`);
-        return false;
-    }
-
-    /**
      * Get extraction progress statistics
      */
     // Replace the existing getExtractionProgress method
@@ -297,84 +283,6 @@ class FFXVExtractor {
         };
     }
 
-    /**
-     * Clean up partial data from current extraction session
-     */
-    cleanupPartialExtractionSession() {
-        const progress = this.getExtractionProgress();
-        let cleanedCount = 0;
-
-        console.log(`Starting cleanup of ${progress.incompleteSections.length} incomplete sections`);
-
-        progress.incompleteSections.forEach(incomplete => {
-            console.log(`Attempting to clean section: ${incomplete.section}`);
-            if (this.cleanupIncompleteSection(incomplete.section)) {
-                cleanedCount++;
-                console.log(`Successfully cleaned section: ${incomplete.section}`);
-            } else {
-                console.log(`No cleanup needed for section: ${incomplete.section}`);
-            }
-        });
-
-        console.log(`Cleanup complete. Cleaned ${cleanedCount} sections`);
-        return cleanedCount;
-    }
-
-    /**
-     * Validate database integrity
-     */
-    validateDatabaseIntegrity() {
-        if (!this.db) {
-            throw new Error('Database not initialized');
-        }
-
-        const issues = [];
-
-        // Check for sections with missing languages
-        const progress = this.getExtractionProgress();
-        if (progress.incompleteSections.length > 0) {
-            issues.push({
-                type: 'incomplete_sections',
-                count: progress.incompleteSections.length,
-                sections: progress.incompleteSections
-            });
-        }
-
-        // Check for duplicate entries (shouldn't happen with INSERT OR REPLACE, but good to verify)
-        const duplicateCheck = this.db.prepare(`
-        SELECT id, section, language, COUNT(*) as count 
-        FROM fulllines 
-        GROUP BY id, section, language 
-        HAVING COUNT(*) > 1
-    `);
-        const duplicates = duplicateCheck.all();
-
-        if (duplicates.length > 0) {
-            issues.push({
-                type: 'duplicates',
-                count: duplicates.length,
-                entries: duplicates
-            });
-        }
-
-        // Check character mappings
-        const charMappingCheck = this.db.prepare('SELECT COUNT(*) as count FROM character_mappings');
-        const charMappingCount = charMappingCheck.get();
-
-        console.log(`Database validation: ${charMappingCount.count} character mappings found`);
-
-        return {
-            isValid: issues.length === 0,
-            issues,
-            stats: {
-                totalEntries: progress.completed * 4, // Rough estimate
-                characterMappings: charMappingCount.count,
-                completeSections: progress.completed,
-                incompleteSections: progress.incomplete
-            }
-        };
-    }
-
     hasExtractedData() {
         if (!this.db) return false;
 
@@ -410,40 +318,71 @@ class FFXVExtractor {
         this.extractionCancelled = true;
     }
 
-    /**
-     * Enhanced extractData with resume capability and improved error handling
-     */
+    async _fetchWithRetry(url, filename, progressCallback, currentIndex, totalFiles, startingProgress) {
+        try {
+            progressCallback({
+                current: currentIndex,
+                total: totalFiles + startingProgress,
+                currentFile: filename,
+                status: 'downloading'
+            });
+
+            const response = await axios.get(url, { timeout: 15000 });
+            this.consecutiveFailures = 0; // Reset on success
+            
+            const successMessage = `Downloaded ${filename}`;
+            this.writeToLogFile(successMessage, 'SUCCESS');
+            
+            return { success: true, data: response.data };
+            
+        } catch (error) {
+            this.consecutiveFailures++;
+            
+            if (this.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
+                const errorMessage = `Operation cancelled: ${this.MAX_CONSECUTIVE_FAILURES} consecutive failures detected. Last error: ${error.message}`;
+                this.writeToLogFile(errorMessage, 'ERROR');
+                progressCallback({
+                    current: currentIndex,
+                    total: totalFiles + startingProgress,
+                    status: 'error',
+                    error: errorMessage
+                });
+                throw new Error(errorMessage);
+            }
+
+            const errorMessage = `Failed ${filename}: ${error.message}`;
+            this.writeToLogFile(errorMessage, 'ERROR');
+            progressCallback({
+                current: currentIndex,
+                total: totalFiles + startingProgress,
+                currentFile: filename,
+                status: 'error',
+                error: error.message
+            });
+            
+            return { success: false, error: error.message };
+        }
+    }
+
     async extractDataWithResume(progressCallback, resumeMode = false) {
         this.extractionCancelled = false;
         let sectionsToProcess = [...this.sections];
         let startingProgress = 0;
 
+        // Initialize retry tracking
+        this.consecutiveFailures = 0;
+        this.MAX_CONSECUTIVE_FAILURES = 3;
+
+        // Handle resume mode: skip already completed sections
         if (resumeMode) {
             const progress = this.getExtractionProgress();
-
-            // Clean up incomplete sections
-            let cleanedCount = 0;
-            progress.incompleteSections.forEach(incomplete => {
-                if (this.cleanupIncompleteSection(incomplete.section)) {
-                    cleanedCount++;
-                }
-            });
-
-            if (cleanedCount > 0) {
-                const cleanupMessage = `Cleaned up ${cleanedCount} incomplete sections`;
-                this.writeToLogFile(cleanupMessage, 'INFO');
-                progressCallback({
-                    status: 'cleanup',
-                    message: cleanupMessage
-                });
-            }
-
-            // Only process sections that aren't complete
+            
             sectionsToProcess = this.sections.filter(sectionConfig =>
                 !progress.completedSections.includes(sectionConfig.name)
             );
 
             startingProgress = progress.completed * Object.keys(this.languages).length;
+            
             const resumeMessage = `Resuming extraction. ${progress.completed}/${progress.total} sections complete. ${sectionsToProcess.length} sections remaining.`;
             this.writeToLogFile(resumeMessage, 'INFO');
             progressCallback({
@@ -453,213 +392,56 @@ class FFXVExtractor {
         }
 
         const totalFiles = sectionsToProcess.reduce((total, sectionConfig) => {
-            return total + sectionConfig.languages.length;
+            return total + sectionConfig.languages.length + 1; // +1 for list file
         }, 0);
+        
         let currentIndex = startingProgress;
         let successCount = 0;
         let failCount = 0;
-        let consecutiveFailures = 0;
-        const MAX_CONSECUTIVE_FAILURES = 3;
-        const insertStmt = this.db.prepare('INSERT OR REPLACE INTO fulllines VALUES (?, ?, ?, ?, ?)');
+
+        // Prepare database statements
+        const insertFullLineStmt = this.db.prepare(`
+            INSERT OR REPLACE INTO fulllines 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        
+        const insertConversationStmt = this.db.prepare(`
+            INSERT OR REPLACE INTO SourceSubLabels 
+            VALUES (?, ?)
+        `);
+
+        // Store character mappings and section URLs once at the beginning
+        await this.storeMetadataOnce(progressCallback);
 
         for (const sectionConfig of sectionsToProcess) {
             const sectionName = sectionConfig.name;
+            
             if (this.extractionCancelled) {
-                // Clean up current incomplete section on cancellation
-                this.cleanupIncompleteSection(sectionName);
-                const cancelMessage = 'Extraction cancelled by user';
-                this.writeToLogFile(cancelMessage, 'INFO');
-                progressCallback({
-                    current: currentIndex,
-                    total: totalFiles + startingProgress,
-                    status: 'cancelled'
-                });
-                return { successCount, failCount, cancelled: true };
+                return this.handleCancellation(currentIndex, totalFiles, startingProgress, successCount, failCount);
             }
-            let sectionSuccess = true;
 
-            // First, fetch the base manifest for this section
             try {
-                const baseUrl = this.buildUrl(sectionName);
-                const baseAttemptMessage = `Attempting base URL: ${baseUrl}`;
+                const sectionResult = await this.processSingleSection(
+                    sectionConfig, 
+                    insertFullLineStmt, 
+                    insertConversationStmt, 
+                    progressCallback, 
+                    currentIndex, 
+                    totalFiles, 
+                    startingProgress
+                );
 
-                this.writeToLogFile(baseAttemptMessage, 'INFO');
-                progressCallback({
-                    status: 'info',
-                    message: baseAttemptMessage
-                });
+                currentIndex = sectionResult.newIndex;
+                successCount += sectionResult.successCount;
+                failCount += sectionResult.failCount;
 
-                await axios.get(baseUrl, { timeout: 15000 });
-                consecutiveFailures = 0; // Reset on success
             } catch (error) {
-                consecutiveFailures++; // Increment on failure
-                sectionSuccess = false;
-
-                // Check if we've hit the consecutive failure limit
-                if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                    const errorMessage = `Operation cancelled: ${MAX_CONSECUTIVE_FAILURES} consecutive failures detected. Last error: ${error.message}`;
-                    // Clean up any partial data from this extraction session
-                    this.cleanupPartialExtractionSession();
-
-                    this.writeToLogFile(errorMessage, 'ERROR');
-                    progressCallback({
-                        current: currentIndex,
-                        total: totalFiles + startingProgress,
-                        status: 'error',
-                        error: errorMessage
-                    });
-                    throw new Error(errorMessage);
-                }
-
-                // If base manifest fails, skip this entire section
-                const skippedFiles = sectionConfig.languages.length;
+                this.writeToLogFile(`Section ${sectionName} failed completely: ${error.message}`, 'ERROR');
+                
+                // Skip all files for this section
+                const skippedFiles = sectionConfig.languages.length + 1;
                 currentIndex += skippedFiles;
                 failCount += skippedFiles;
-
-                const baseFailMessage = `Base manifest failed: ${error.message}`;
-                this.writeToLogFile(`Section ${sectionName} - ${baseFailMessage}`, 'ERROR');
-
-                for (let i = 0; i < skippedFiles; i++) {
-                    progressCallback({
-                        current: currentIndex - skippedFiles + i + 1,
-                        total: totalFiles + startingProgress,
-                        currentFile: `${sectionName} (base manifest failed)`,
-                        status: 'error',
-                        error: baseFailMessage
-                    });
-                }
-                continue;
-            }
-
-            // Get character mappings once
-            if (this.characterMappings && !this.characterMappingsStored) {
-                const charMessage = 'Storing character mappings in database...';
-                this.writeToLogFile(charMessage, 'INFO');
-                progressCallback({
-                    status: 'info',
-                    message: charMessage
-                });
-
-                if (this.storeCharacterMappings()) {
-                    this.characterMappingsStored = true;
-                }
-            }
-
-            // Store section URLs once
-            if (!this.sectionUrlsStored) {
-                const urlMessage = 'Storing section URL mappings...';
-                this.writeToLogFile(urlMessage, 'INFO');
-                progressCallback({
-                    status: 'info',
-                    message: urlMessage
-                });
-
-                if (this.storeSectionUrls()) {
-                    this.sectionUrlsStored = true;
-                }
-            }
-
-            // Now fetch each language file for this section
-            for (const langCode of sectionConfig.languages) { // Fixed: iterate over sectionConfig.languages
-                if (this.extractionCancelled) {
-                    this.cleanupIncompleteSection(sectionName);
-                    const cancelMessage = 'Extraction cancelled by user';
-                    this.writeToLogFile(cancelMessage, 'INFO');
-                    progressCallback({
-                        current: currentIndex,
-                        total: totalFiles + startingProgress,
-                        status: 'cancelled'
-                    });
-                    return { successCount, failCount, cancelled: true };
-                }
-
-                currentIndex++;
-                const url = this.buildUrl(sectionName, langCode);
-                const currentFileName = `${sectionName}_${langCode}.json`;
-                const langName = this.languages[langCode];
-
-                const urlAttemptMessage = `Attempting language URL: ${url}`;
-                this.writeToLogFile(urlAttemptMessage, 'INFO');
-                progressCallback({
-                    status: 'info',
-                    message: urlAttemptMessage
-                });
-
-                progressCallback({
-                    current: currentIndex,
-                    total: totalFiles + startingProgress,
-                    currentFile: currentFileName,
-                    status: 'downloading'
-                });
-
-                try {
-                    const response = await axios.get(url, { timeout: 15000 });
-                    const data = response.data;
-
-                    // Insert all entries in a transaction for better performance
-                    const transaction = this.db.transaction((entries) => {
-                        for (const [id, text] of entries) {
-                            insertStmt.run(id, sectionName, langCode, langName, text);
-                        }
-                    });
-
-                    transaction(Object.entries(data));
-
-                    successCount++;
-                    consecutiveFailures = 0; // Reset consecutive failures on success
-
-                    const successMessage = `Downloaded ${currentFileName} (${Object.keys(data).length} entries)`;
-                    this.writeToLogFile(successMessage, 'SUCCESS');
-                    progressCallback({
-                        current: currentIndex,
-                        total: totalFiles + startingProgress,
-                        currentFile: currentFileName,
-                        status: 'success',
-                        entryCount: Object.keys(data).length
-                    });
-
-                } catch (error) {
-                    failCount++;
-                    consecutiveFailures++; // Increment consecutive failures
-                    sectionSuccess = false;
-
-                    const errorMessage = `Failed ${currentFileName}: ${error.message}`;
-                    this.writeToLogFile(errorMessage, 'ERROR');
-                    progressCallback({
-                        current: currentIndex,
-                        total: totalFiles + startingProgress,
-                        currentFile: currentFileName,
-                        status: 'error',
-                        error: error.message
-                    });
-
-                    // Check if we've hit the consecutive failure limit
-                    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                        // Clean up incomplete section and any partial data
-                        this.cleanupIncompleteSection(sectionName);
-                        this.cleanupPartialExtractionSession();
-
-                        const consecutiveErrorMessage = `Operation cancelled: ${MAX_CONSECUTIVE_FAILURES} consecutive failures detected. Last error: ${error.message}`;
-                        this.writeToLogFile(consecutiveErrorMessage, 'ERROR');
-                        progressCallback({
-                            current: currentIndex,
-                            total: totalFiles + startingProgress,
-                            status: 'error',
-                            error: consecutiveErrorMessage
-                        });
-                        throw new Error(consecutiveErrorMessage);
-                    }
-                }
-
-                // Respectful fetch
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-
-            // If section failed, clean it up
-            if (!sectionSuccess) {
-                const cleanupMessage = `Cleaning up incomplete section: ${sectionName}`;
-                this.writeToLogFile(cleanupMessage, 'INFO');
-                this.cleanupIncompleteSection(sectionName);
             }
         }
 
@@ -668,60 +450,230 @@ class FFXVExtractor {
         return { successCount, failCount, cancelled: false };
     }
 
-    async extractData(progressCallback) {
-        return this.extractDataWithResume(progressCallback, false);
+    async storeMetadataOnce(progressCallback) {
+        // Store character mappings once if available
+        if (this.characterMappings && !this.characterMappingsStored) {
+            const charMessage = 'Storing character mappings in database...';
+            this.writeToLogFile(charMessage, 'INFO');
+            progressCallback({
+                status: 'info',
+                message: charMessage
+            });
+
+            if (this.storeCharacterMappings()) {
+                this.characterMappingsStored = true;
+            }
+        }
+
+        // Store section URLs once
+        if (!this.sectionUrlsStored) {
+            const urlMessage = 'Storing section URL mappings...';
+            this.writeToLogFile(urlMessage, 'INFO');
+            progressCallback({
+                status: 'info',
+                message: urlMessage
+            });
+
+            if (this.storeSectionUrls()) {
+                this.sectionUrlsStored = true;
+            }
+        }
     }
 
+    async processSingleSection(sectionConfig, insertFullLineStmt, insertConversationStmt, progressCallback, currentIndex, totalFiles, startingProgress) {
+        const sectionName = sectionConfig.name;
+        let localSuccessCount = 0;
+        let localFailCount = 0;
+        let localIndex = currentIndex;
+
+        // Step 1: Validate section exists with base manifest
+        const baseUrl = this.buildUrl(sectionName);
+        const baseResult = await this._fetchWithRetry(baseUrl, `${sectionName} (base)`, progressCallback, localIndex, totalFiles, startingProgress);
+        
+        if (!baseResult.success) {
+            const skippedFiles = sectionConfig.languages.length + 1;
+            return {
+                newIndex: localIndex + skippedFiles,
+                successCount: 0,
+                failCount: skippedFiles
+            };
+        }
+
+        // Step 2: Fetch conversation list for character mappings
+        localIndex++;
+        const listUrl = this.buildUrl(sectionName, null, true);
+        const listResult = await this._fetchWithRetry(listUrl, `${sectionName}_list.json`, progressCallback, localIndex, totalFiles, startingProgress);
+        
+        if (!listResult.success) {
+            const skippedFiles = sectionConfig.languages.length;
+            return {
+                newIndex: localIndex + skippedFiles,
+                successCount: 0,
+                failCount: skippedFiles
+            };
+        }
+
+        const conversationData = listResult.data;
+        localSuccessCount++;
+
+        // Store conversation metadata
+        try {
+            const conversationTransaction = this.db.transaction(() => {
+                for (const conversation of conversationData) {
+                    insertConversationStmt.run(conversation.id, sectionName);
+                }
+            });
+            conversationTransaction();
+
+            progressCallback({
+                current: localIndex,
+                total: totalFiles + startingProgress,
+                currentFile: `${sectionName}_list.json`,
+                status: 'success',
+                entryCount: conversationData.length
+            });
+        } catch (error) {
+            this.writeToLogFile(`Failed to store conversations for ${sectionName}: ${error.message}`, 'ERROR');
+        }
+
+        // Step 3: Create lookup maps for character and conversation IDs
+        const { dialogueToCharacter, dialogueToConversation } = this.createLookupMaps(conversationData);
+
+        // Step 4: Process each language file
+        for (const langCode of sectionConfig.languages) {
+            if (this.extractionCancelled) {
+                return this.handleCancellation(localIndex, totalFiles, startingProgress, localSuccessCount, localFailCount);
+            }
+
+            localIndex++;
+            const result = await this.processLanguageFile(
+                sectionName, 
+                langCode, 
+                dialogueToCharacter, 
+                dialogueToConversation, 
+                insertFullLineStmt, 
+                progressCallback, 
+                localIndex, 
+                totalFiles, 
+                startingProgress
+            );
+
+            if (result.success) {
+                localSuccessCount++;
+            } else {
+                localFailCount++;
+            }
+
+            // Respectful delay between requests
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        return {
+            newIndex: localIndex,
+            successCount: localSuccessCount,
+            failCount: localFailCount
+        };
+    }
+
+    createLookupMaps(conversationData) {
+        const dialogueToCharacter = new Map();
+        const dialogueToConversation = new Map();
+        
+        if (conversationData) {
+            for (const conversation of conversationData) {
+                for (const line of conversation.lines) {
+                    dialogueToCharacter.set(line.id, line.chara);
+                    dialogueToConversation.set(line.id, conversation.id);
+                }
+            }
+        }
+
+        return { dialogueToCharacter, dialogueToConversation };
+    }
+
+    async processLanguageFile(sectionName, langCode, dialogueToCharacter, dialogueToConversation, insertFullLineStmt, progressCallback, currentIndex, totalFiles, startingProgress) {
+        const url = this.buildUrl(sectionName, langCode);
+        const currentFileName = `${sectionName}_${langCode}.json`;
+        const langName = this.languages[langCode];
+        
+        const result = await this._fetchWithRetry(url, currentFileName, progressCallback, currentIndex, totalFiles, startingProgress);
+        
+        if (!result.success) {
+            return { success: false };
+        }
+
+        const data = result.data;
+        
+        try {
+            // Insert all entries in a single transaction
+            const transaction = this.db.transaction(() => {
+                for (const [dialogueId, text] of Object.entries(data)) {
+                    const characterId = dialogueToCharacter.get(dialogueId) || null;
+                    const conversationId = dialogueToConversation.get(dialogueId) || null;
+                    
+                    insertFullLineStmt.run(
+                        dialogueId,
+                        conversationId,
+                        sectionName,
+                        langCode,
+                        langName,
+                        text,
+                        characterId
+                    );
+                }
+            });
+
+            transaction();
+            
+            progressCallback({
+                current: currentIndex,
+                total: totalFiles + startingProgress,
+                currentFile: currentFileName,
+                status: 'success',
+                entryCount: Object.keys(data).length
+            });
+
+            return { success: true };
+
+        } catch (error) {
+            this.writeToLogFile(`Database error for ${currentFileName}: ${error.message}`, 'ERROR');
+            return { success: false };
+        }
+    }
+
+    handleCancellation(currentIndex, totalFiles, startingProgress, successCount, failCount) {
+        const cancelMessage = 'Extraction cancelled by user';
+        this.writeToLogFile(cancelMessage, 'INFO');
+        return { successCount, failCount, cancelled: true };
+    }
     search(query, language = null, section = null, limit = null) {
         if (!this.db) {
             throw new Error('Database not initialized');
         }
 
-        let sql = `
-        SELECT f.*, 
-               CASE f.language
-                   WHEN 'us' THEN c.us_name
-                   WHEN 'jp' THEN c.jp_name  
-                   WHEN 'de' THEN c.de_name
-                   WHEN 'fr' THEN c.fr_name
-                   ELSE NULL
-               END as speaker_name,
-               u.view_url
-        FROM fulllines f 
-        LEFT JOIN character_mappings c ON f.id = c.dialogue_id
-        LEFT JOIN section_urls u ON f.section = u.section_name
-        WHERE LOWER(f.text) LIKE LOWER(?)
-    `;
+        if (!query || typeof query !== 'string') {
+            throw new Error('Query parameter is required and must be a string');
+        }
+
+        const sql = this._buildSearchSql(false, language, section, limit);
         const params = [`%${query}%`];
-
-        if (language) {
-            sql += ' AND f.language = ?';
-            params.push(language);
-        }
-
-        if (section) {
-            sql += ' AND f.section = ?';
-            params.push(section);
-        }
-
-        sql += ` ORDER BY f.section, f.language`;
-
-        // Only add limit if specified
-        if (limit && limit > 0) {
-            sql += ` LIMIT ${limit}`;
-        }
+        
+        if (language) params.push(language);
+        if (section) params.push(section);
 
         const stmt = this.db.prepare(sql);
-        const rows = stmt.all(...params);
+        const results = stmt.all(...params);
 
-        return rows.map(row => ({
-            id: row.id,
+        return results.map(row => ({
+            dialogueId: row.dialogue_id,
+            conversationId: row.conversation_id,
             section: row.section,
             language: row.language,
             langName: row.lang_name,
             text: row.text,
-            speakerName: row.speaker_name || '???',
-            sectionUrl: row.view_url
+            characterId: row.character_id,
+            speakerName: row.speaker_name || 'Unknown',
+            sectionUrl: row.view_url || `https://ff15.aikotoba.jp/#/${row.section}`
         }));
     }
 
@@ -730,69 +682,83 @@ class FFXVExtractor {
             throw new Error('Database not initialized');
         }
 
-        let sql = `
-        SELECT f.*, 
-               CASE f.language
-                   WHEN 'us' THEN c.us_name
-                   WHEN 'jp' THEN c.jp_name  
-                   WHEN 'de' THEN c.de_name
-                   WHEN 'fr' THEN c.fr_name
-                   ELSE NULL
-               END as speaker_name,
-               u.view_url
-        FROM fulllines f 
-        JOIN character_mappings c ON f.id = c.dialogue_id
-        LEFT JOIN section_urls u ON f.section = u.section_name
-        WHERE CASE f.language
-                  WHEN 'us' THEN c.us_name
-                  WHEN 'jp' THEN c.jp_name  
-                  WHEN 'de' THEN c.de_name
-                  WHEN 'fr' THEN c.fr_name
-                  ELSE c.us_name
-              END = ?
-    `;
+        if (!characterName || typeof characterName !== 'string') {
+            throw new Error('Character name parameter is required and must be a string');
+        }
+
+        const sql = this._buildSearchSql(true, language, section, limit);
         const params = [characterName];
-
-        if (language) {
-            sql += ' AND f.language = ?';
-            params.push(language);
-        }
-
-        if (section) {
-            sql += ' AND f.section = ?';
-            params.push(section);
-        }
-
-        sql += ` ORDER BY f.section, f.language`;
-
-        // Only add limit if specified
-        if (limit && limit > 0) {
-            sql += ` LIMIT ${limit}`;
-        }
+        
+        if (language) params.push(language);
+        if (section) params.push(section);
 
         const stmt = this.db.prepare(sql);
-        const rows = stmt.all(...params);
+        const results = stmt.all(...params);
 
-        return rows.map(row => ({
-            id: row.id,
+        return results.map(row => ({
+            dialogueId: row.dialogue_id,
+            conversationId: row.conversation_id,
             section: row.section,
             language: row.language,
             langName: row.lang_name,
             text: row.text,
-            speakerName: row.speaker_name || '???',
-            sectionUrl: `https://ff15.aikotoba.jp/#/${row.section}`
+            characterId: row.character_id,
+            speakerName: row.speaker_name || characterName,
+            sectionUrl: row.view_url || `https://ff15.aikotoba.jp/#/${row.section}`
         }));
     }
 
-    // Get unique speakers for dropdown population
-    getUniqueCharacters(language = null) {
-        if (!this.db) {
-            throw new Error('Database not initialized');
+    _buildSearchSql(isCharacterSearch = false, language = null, section = null, limit = null) 
+    {
+        let sql = `
+            SELECT f.*, 
+                CASE f.language
+                    WHEN 'us' THEN c.us_name
+                    WHEN 'jp' THEN c.jp_name  
+                    WHEN 'de' THEN c.de_name
+                    WHEN 'fr' THEN c.fr_name
+                    ELSE '???'
+                END as speaker_name,
+                u.view_url
+            FROM fulllines f 
+            ${isCharacterSearch ? 'JOIN' : 'LEFT JOIN'} character_mappings c ON f.character_id = c.character_id
+            LEFT JOIN section_urls u ON f.section = u.section_name
+            WHERE `;
+
+        if (isCharacterSearch) 
+        {
+            sql += `CASE f.language
+                        WHEN 'us' THEN c.us_name
+                        WHEN 'jp' THEN c.jp_name  
+                        WHEN 'de' THEN c.de_name
+                        WHEN 'fr' THEN c.fr_name
+                        ELSE c.us_name
+                    END = ?`;
+        } 
+        else 
+        {
+            sql += `LOWER(f.text) LIKE LOWER(?)`;
         }
+
+        if (language)
+            sql += ' AND f.language = ?';
+        if (section)
+            sql += ' AND f.section = ?';
+
+        sql += ` ORDER BY f.section, f.language`;
+        if (limit && limit > 0)
+            sql += ` LIMIT ${limit}`;
+        return sql;
+    }
+
+    getUniqueCharacters(language = null) {
+        if (!this.db)
+            throw new Error('Database not initialized');
 
         let sql, params = [];
 
-        if (language) {
+        if (language) 
+        {
             // Get characters for specific language
             sql = `
             SELECT DISTINCT 
@@ -811,17 +777,17 @@ class FFXVExtractor {
                     WHEN 'fr' THEN c.fr_name
                     ELSE c.us_name
                   END IS NOT NULL
-            ORDER BY character_name
-        `;
+            ORDER BY character_name`;
             params = [language, language];
-        } else {
+        } 
+        else 
+        {
             // Get all unique characters (use US names as default)
             sql = `
             SELECT DISTINCT c.us_name as character_name
             FROM character_mappings c
             WHERE c.us_name IS NOT NULL
-            ORDER BY character_name
-        `;
+            ORDER BY character_name`;
         }
 
         const stmt = this.db.prepare(sql);
@@ -917,15 +883,15 @@ class FFXVExtractor {
     storeCharacterMappings() {
         if (!this.characterMappings || !this.db) return false;
 
-        const insertStmt = this.db.prepare(`
-        INSERT OR REPLACE INTO character_mappings 
-        VALUES (?, ?, ?, ?, ?)
+       const insertStmt = this.db.prepare(`
+            INSERT OR REPLACE INTO character_mappings 
+            VALUES (?, ?, ?, ?, ?)
         `);
 
         const transaction = this.db.transaction(() => {
-            for (const [dialogueId, characterData] of Object.entries(this.characterMappings)) {
+            for (const [characterId, characterData] of Object.entries(this.characterMappings)) {
                 insertStmt.run(
-                    dialogueId,
+                    characterId,
                     characterData.us || null,
                     characterData.jp || null,
                     characterData.de || null,
@@ -1016,7 +982,7 @@ function createWindow() {
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
         },
-        // icon: path.join(__dirname, 'assets/icon.png'), // Add icon if available
+        icon: path.join(__dirname, 'assets/icon.ico'),
         title: 'FFXV Full Lines Extractor'
     });
 
@@ -1106,25 +1072,6 @@ ipcMain.handle('get-extraction-progress', async () => {
         return { success: false, error: error.message };
     }
 });
-
-ipcMain.handle('cleanup-incomplete-sections', async () => {
-    try {
-        const cleanedCount = extractor.cleanupPartialExtractionSession();
-        return { success: true, cleanedCount };
-    } catch (error) {
-        return { success: false, error: error.message };
-    }
-});
-
-ipcMain.handle('validate-database', async () => {
-    try {
-        const validation = extractor.validateDatabaseIntegrity();
-        return { success: true, validation };
-    } catch (error) {
-        return { success: false, error: error.message };
-    }
-});
-
 
 ipcMain.handle('search-fulllines', async (event, query, language, section, limit) => {
     try {

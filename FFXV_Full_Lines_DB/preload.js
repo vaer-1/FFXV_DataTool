@@ -9,8 +9,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     startExtractionWithResume: (resumeMode) => ipcRenderer.invoke('start-extraction-with-resume', resumeMode),
     cancelExtraction: () => ipcRenderer.invoke('cancel-extraction'),
     getExtractionProgress: () => ipcRenderer.invoke('get-extraction-progress'),
-    cleanupIncompleteSections: () => ipcRenderer.invoke('cleanup-incomplete-sections'),
-    validateDatabase: () => ipcRenderer.invoke('validate-database'),
     getDatabaseSummary: () => ipcRenderer.invoke('get-database-summary'),
     searchFullLines: (query, language, section, limit) => ipcRenderer.invoke('search-fulllines', query, language, section, limit),
     getCharacters: (language) => ipcRenderer.invoke('get-characters', language),
