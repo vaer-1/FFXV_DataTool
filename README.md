@@ -1,7 +1,7 @@
 # FFXV_DataTool
 A tool to compile, search, and cross-reference data from various official FFXV content.
 
-Download the installer <a href=''>Here</a>
+Download the installer <a href='https://github.com/vaer-1/FFXV_DataTool/releases/tag/Release'>Here</a>
 
 ~~ Current Features ~~
 - FFXV Full Lines database compiler: <a href='https://ff15.aikotoba.jp/#/'>Site Link</a>
