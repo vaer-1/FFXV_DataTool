@@ -13,12 +13,9 @@
                 <div class="info-item">
                     <strong>Database Location:</strong> <span id="db-path">Not selected</span>
                 </div>
-                <div class="info-item">
-                    <strong>Status:</strong> <span id="status">Ready</span>
-                </div>
             </div>
         </header>
-
+        
         <div class="main-content">
             <div class="left-panel">
                 <div class="section">
@@ -68,9 +65,9 @@
 
             <div class="right-panel">
                 <div class="section">
-                    <h2>Search Full Lines</h2>
+                    <h2>Data Search</h2>
                     <div class="search-controls">
-                        <input type="text" id="search-input" placeholder="Enter search terms..." disabled />
+                        <input type="text" id="search-input" placeholder="Enter anything" disabled />
                         <div class="filter-row">
                             <select id="language-filter" disabled>
                                 <option value="">All Languages</option>
@@ -88,13 +85,12 @@
                         </div>
                         <button id="search-btn" class="secondary-button" disabled>Search</button>
                     </div>
-
                     <div class="results-container">
                         <div class="results-header">
                             <span id="results-count">Search Results</span>
                         </div>
                         <div class="results-list" id="results-list">
-                            <div class="no-results">Complete extraction to search</div>
+                            <div class="no-results"></div>
                         </div>
                     </div>
                 </div>

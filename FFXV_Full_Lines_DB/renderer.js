@@ -89,7 +89,6 @@ class FFXVExtractorUI {
         const sectionsResult = await window.electronAPI.getSectionsStatus();
         if (!sectionsResult.success) {
             this.addLog('Sections configuration error: ' + sectionsResult.error, 'error');
-            this.setStatus('Configuration error', 'error');
             this.sectionsError = true;
             this.updateUI();
             return;
@@ -171,20 +170,16 @@ class FFXVExtractorUI {
         this.isExtracting = true;
         this.updateUI();
 
-        this.setStatus('Testing connection...', 'testing');
-
         // Test connection first
         const connectionTest = await window.electronAPI.testConnection();
         if (!connectionTest.success) {
             this.addLog('Connection test failed. Please check internet connection.', 'error');
             this.isExtracting = false;
-            this.setStatus('Connection failed', 'error');
             this.updateUI();
             return;
         }
 
         this.addLog(`Connection test passed. ${actionText}...`, 'success');
-        this.setStatus(actionText, 'running');
         this.progressContainer.style.display = 'block';
 
         const result = await window.electronAPI.startExtractionWithResume(resumeMode);
@@ -195,19 +190,16 @@ class FFXVExtractorUI {
         if (result.success) {
             if (result.cancelled) {
                 this.addLog('Extraction cancelled by user', 'info');
-                this.setStatus('Cancelled', 'cancelled');
             } else {
                 this.extractionComplete = true;
                 this.resumeAvailable = false;
                 this.addLog(`Extraction complete. Success: ${result.successCount}, Failed: ${result.failCount}`, 'success');
-                this.setStatus('Extraction complete', 'complete');
                 await this.loadStats();
                 this.populateSectionFilter();
                 this.populateSpeakerFilter();
             }
         } else {
             this.addLog('Extraction failed: ' + result.error, 'error');
-            this.setStatus('Extraction failed', 'error');
             await this.checkExtractionProgress();
         }
 
@@ -422,11 +414,6 @@ class FFXVExtractorUI {
         } else if (progress.status === 'error') {
             this.addLog(`Failed ${progress.currentFile}: ${progress.error}`, 'error');
         }
-    }
-
-    setStatus(message, type) {
-        this.status.textContent = message;
-        this.status.className = `status-${type}`;
     }
 
     addLog(message, type = 'info') {
