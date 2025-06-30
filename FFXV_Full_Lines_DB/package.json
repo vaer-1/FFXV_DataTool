@@ -1,7 +1,7 @@
 {
   "name": "ffxv-full-lines-extractor",
   "version": "1.0.0",
-  "description": "Final Fantasy XV Full Lines Data Extractor",
+  "description": "Final Fantasy XV Data Extractor",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -11,7 +11,7 @@
   },
   "build": {
     "appId": "com.ffxv.fulllines.extractor",
-    "productName": "FFXV Full Lines Extractor",
+    "productName": "FFXV Data Extractor",
     "directories": {
       "output": "dist"
     },
